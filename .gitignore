@@ -19,3 +19,5 @@ src/c2newspeak/pp_lexer.ml
 src/c2newspeak/pp_parser.ml
 src/c2newspeak/pp_parser.mli
 src/c2newspeak/pp_parser.output
+generated
+*.no

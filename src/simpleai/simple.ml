@@ -273,15 +273,6 @@ let rec dot_of_expr =
 
 let blk_tbl = Hashtbl.create 19
 
-(* type trans = *)
-(*   | Choice of trans list * trans list *)
-(*   | Node of string *)
-(*   | End *)
-
-(* and transitions = trans list *)
-
-
-
 (** This is the worst code ever, please don't read for now ! *)
 
 
@@ -293,19 +284,16 @@ let rec dot_of_blk =
     | [] -> prevs (** Assert false ? *)
     | (stmtk, _) :: blk ->
       let stmts = dot_of_stmt_kind stmtk in
-      begin
-        Format.printf "prevs : %d; next : %d@." (List.length prevs)(List.length stmts);
-        let stmt = List.hd stmts in
-        let res = List.fold_left (fun acc pre ->
-            Format.sprintf "%s%s -> %s;@." acc pre stmt) "" prevs in
-        let node = Format.sprintf "#blk%d" !i in
-        Hashtbl.add blk_tbl node res;
-        incr i;
-        if is_if stmtk then
-          dot_of_blk (List.tl stmts) blk
-        else
-          dot_of_blk stmts blk
-      end
+      let stmt = List.hd stmts in
+      let res = List.fold_left (fun acc pre ->
+          Format.sprintf "%s%s -> %s;@." acc pre stmt) "" prevs in
+      let node = Format.sprintf "#blk%d" !i in
+      Hashtbl.add blk_tbl node res;
+      incr i;
+      if is_if stmtk then
+        dot_of_blk (List.tl stmts) blk
+      else
+        dot_of_blk stmts blk
 
 and stmt_tbl = Hashtbl.create 19
 
@@ -359,16 +347,11 @@ let dot_of_funs tbl =
     (fun fid fundec acc ->
        Format.sprintf "%s@.%s" acc (List.hd (dot_of_blk [fid] fundec))) tbl ""
 
-(* type trans = *)
-
-
-(* let  *)
-
 (* Generates a DOT based representation of the control flow graph of
    the program prog and writes it in the file names filename *)
 let to_dot prog filename =
   let fid = open_out filename in
-  let graphname = Filename.chop_extension filename in
+  let graphname = Filename.chop_extension @@ Filename.basename filename in
   let _ = (dot_of_funs prog.fundecs) in
   let _ = (dot_of_blk ["init"] prog.init) in
   (* let exprs = Hashtbl.fold (fun key v acc -> *)
