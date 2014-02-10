@@ -1,18 +1,18 @@
 (*
-  C2Newspeak: compiles C code into Newspeak. Newspeak is a minimal language 
+  C2Newspeak: compiles C code into Newspeak. Newspeak is a minimal language
   well-suited for static analysis.
   Copyright (C) 2007  Charles Hymans
-  
+
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
   version 2.1 of the License, or (at your option) any later version.
-  
+
   This library is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
   Lesser General Public License for more details.
-  
+
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -25,7 +25,7 @@
 
 open UnrelState
 
-type t = 
+type t =
     Top
   | Val of Int32.t
 
@@ -48,14 +48,14 @@ let join x y =
 
 let neg x =
   match x with
-      Val i when i = Int32.zero -> Val Int32.one
-    | Val _ -> Val Int32.zero
+      Val i when i = Int32.zero -> Val Int32.zero
+    | Val v -> Val (Int32.neg v)
     | Top -> Top
 
 
 let add x y =
   match (x, y) with
-      (Val x, Val y) -> 
+      (Val x, Val y) ->
 	let z = Int32.add x y in
          if (Int64.compare (Int64.add (Int64.of_int32 x) (Int64.of_int32 y)) (Int64.of_int32 z) != 0) then Top
 	  else Val z
@@ -65,19 +65,19 @@ let is_safe_add x y =
   match (x, y) with
       (Val x, Val y) ->
 	let z = Int32.add x y in
-         (Int64.compare (Int64.add (Int64.of_int32 x) (Int64.of_int32 y)) (Int64.of_int32 z) == 0) 
+         (Int64.compare (Int64.add (Int64.of_int32 x) (Int64.of_int32 y)) (Int64.of_int32 z) == 0)
     | _ -> false
 
 let implies _ = false
 
-(* Restricts the value x to make the condition 
+(* Restricts the value x to make the condition
    c op x true *)
 let guard op c x =
   match (op, c, x) with
       (LTE, Val i, Val x) when Int32.compare i x > 0 -> raise Emptyset
     | _ -> x
 
-let to_string v = 
+let to_string v =
   match v with
       Val i -> Int32.to_string i
     | Top -> "?"

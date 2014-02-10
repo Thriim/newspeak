@@ -338,9 +338,7 @@ and dot_of_stmt_kind =
             (string_of_lval lv) (string_of_cmp cmp) (string_of_cst cst) in
         [Format.sprintf "%s -> AssertionError@.%s" assertion assertion]
     in
-    (* Format.sprintf "%s" (step stmt) *)
     step stmt
-(* Format.sprintf "%s -> end"  *)
 
 let dot_of_funs tbl =
   Hashtbl.fold
@@ -354,14 +352,11 @@ let to_dot prog filename =
   let graphname = Filename.chop_extension @@ Filename.basename filename in
   let _ = (dot_of_funs prog.fundecs) in
   let _ = (dot_of_blk ["init"] prog.init) in
-  (* let exprs = Hashtbl.fold (fun key v acc -> *)
-  (*     Format.sprintf "%s%s [label=%s];@." acc key v) expr_tbl "" in *)
   let stmts = Hashtbl.fold (fun key v acc ->
       Format.sprintf "%s%s [label=\"%s\"];@." acc key v) stmt_tbl "" in
   let blks = Hashtbl.fold (fun _ v acc ->
       Format.sprintf "%s%s" acc v) blk_tbl "" in
   output_string fid (Format.sprintf "digraph generated_%s {\n" graphname);
-  (* output_string fid (exprs ^ "\n"); *)
   output_string fid (stmts ^ "\n");
   output_string fid (blks ^ "\n");
   output_string fid "}";
