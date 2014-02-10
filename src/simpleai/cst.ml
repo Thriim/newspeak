@@ -70,12 +70,20 @@ let is_safe_add x y =
 
 let implies _ = false
 
+(* type bop = EQ | GT | LT | NEQ | LTE | GTE
+*)
+
 (* Restricts the value x to make the condition
    c op x true *)
 let guard op c x =
   match (op, c, x) with
-      (LTE, Val i, Val x) when Int32.compare i x > 0 -> raise Emptyset
-    | _ -> x
+    (LTE, Val i, Val x) when Int32.compare i x > 0 -> raise Emptyset
+  | (EQ, Val i, Val x) when Int32.compare i x <> 0 -> raise Emptyset
+  | (GT, Val i, Val x) when Int32.compare i x <= 0 -> raise Emptyset
+  | (LT, Val i, Val x) when Int32.compare i x >= 0 -> raise Emptyset
+  | (GTE, Val i, Val x) when Int32.compare i x < 0 -> raise Emptyset
+  | (NEQ, Val i, Val x) when Int32.compare i x = 0 -> raise Emptyset
+  | _ -> x
 
 let to_string v =
   match v with
