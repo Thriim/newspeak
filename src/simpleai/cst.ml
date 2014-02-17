@@ -68,7 +68,26 @@ let is_safe_add x y =
          (Int64.compare (Int64.add (Int64.of_int32 x) (Int64.of_int32 y)) (Int64.of_int32 z) == 0)
     | _ -> false
 
-let implies _ = false
+let _f_of_bop = function
+  | LTE -> (<=)
+  | GTE -> (>=)
+  | EQ -> (=)
+  | GT -> (>)
+  | LT -> (<)
+  | NEQ -> (<>)
+
+let f_of_cmp cmp =
+  let open Simple in
+  match cmp with
+  | Equals -> (=)
+  | IsLess -> (<)
+
+let implies (t, cmp, value) =
+  match t with
+  | Top -> true
+  | Val (i) ->
+    let cmp = f_of_cmp cmp in
+    cmp (Int32.compare i value) 0
 
 (* type bop = EQ | GT | LT | NEQ | LTE | GTE
 *)
