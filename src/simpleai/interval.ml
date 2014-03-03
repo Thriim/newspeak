@@ -107,21 +107,70 @@ let add (i1 : t) (i2 : t) =
 (*     | _, _ -> i2.up in *)
 (*   { less; up } *)
 
-let guard op i1 i2 =
-  match (op, i1, i2) with
-  | EQ, i1, i2 ->
-    if contains i1 i2 then i1 else if contains i2 i1 then i2 else raise Emptyset
-  | NEQ, i1, i2 ->
-    if not @@ contains i1 i2 then i2 else if not @@ contains i2 i1 then i1
+let is_bottom i =
+  match i.less, i.up with
+  | Max, Min -> true
+  | Value v1, Value v2 when Int32.compare v1 v2 < 0 -> true
+  | _ -> false
+
+let bottom = { less = Max; up = Min }
+
+let intersect i1 i2 = { less = i1.up; up = i2.less }
+
+let guard op c x =
+  match (op, c, x) with
+  | EQ, c, x ->
+    if contains c x then c
+    else if contains x c then x
+    else if is_bottom @@ intersect c x then raise Emptyset
+    else intersect c x
+  | NEQ, c, x ->
+    if not @@ contains c x then x else if not @@ contains x c then c
     else raise Emptyset
-  | LTE, i1, i2 ->
+  | LTE, c, x ->
     begin
-      match i1.less, i2.up with
-      | Max, Min -> raise Emptyset
-      | Value v1, Value v2 when (Int32.compare v1 v2) > 0 ->raise Emptyset
-      | _, _ -> join i1 i2
+      match c.up, x.less with
+      | Max, Min | Max, Value _ | Value _, Min -> raise Emptyset
+      (* | Value v1, Value v2 when (Int32.compare v1 v2) > 0 -> raise Emptyset *)
+      | _, _ -> begin
+          match c.up, x.up with
+          | Value v1, Value v2 when Int32.compare v1 v2 > 0 -> raise Emptyset
+          | _ -> join c x
+        end
     end
-  | _ -> assert false
+  | LT, c, x ->
+    begin
+      match c.up, x.less with
+      | Max, Min | Max, Value _ | Value _, Min -> raise Emptyset
+      (* | Value v1, Value v2 when (Int32.compare v1 v2) > 0 -> raise Emptyset *)
+      | _, _ -> begin
+          match c.up, x.up with
+          | Value v1, Value v2 when Int32.compare v1 v2 >= 0 -> raise Emptyset
+          | _ -> join c x
+        end
+    end
+  | GTE, c, x ->
+    begin
+      match c.less, x.up with
+      | Min, Max | Min, Value _ | Value _, Max -> raise Emptyset
+      (* | Value v1, Value v2 when (Int32.compare v1 v2) > 0 -> raise Emptyset *)
+      | _, _ -> begin
+          match c.less, x.less with
+          | Value v1, Value v2 when Int32.compare v1 v2 < 0 -> raise Emptyset
+          | _ -> join c x
+        end
+    end
+  | GT, c, x ->
+    begin
+      match c.less, x.up with
+      | Min, Max | Min, Value _ | Value _, Max -> raise Emptyset
+      (* | Value v1, Value v2 when (Int32.compare v1 v2) > 0 -> raise Emptyset *)
+      | _, _ -> begin
+          match c.less, x.less with
+          | Value v1, Value v2 when Int32.compare v1 v2 <= 0 -> raise Emptyset
+          | _ -> join c x
+        end
+    end
 
 let to_string v =
   let to_string' v =
