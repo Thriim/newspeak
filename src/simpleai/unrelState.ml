@@ -40,6 +40,7 @@ sig
   val singleton: Int32.t -> t
   val of_bounds: (Int32.t * Int32.t) -> t
   val join: t -> t -> t
+  val widen: t -> t -> t
   val contains: t -> t -> bool
   val implies: (t * Simple.cmp * Int32.t) -> bool
   val neg: t -> t
@@ -100,6 +101,8 @@ struct
       in
       Map.iter join_info s1;
       Some !res
+
+  let widen = join
 
   let add_var x s =
     match s with

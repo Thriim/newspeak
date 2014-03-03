@@ -30,6 +30,15 @@ let join i1 i2 =
   in
   { less; up }
 
+let widen i1 i2 =
+  let less = match i1.less, i2.less with
+    | Value v1, Value v2 when Int32.compare v1 v2 <= 0 -> Value v1
+    | _ -> Min in
+  let up = match i1.up, i2.up with
+    | Value v1, Value v2 when Int32.compare v1 v2 >= 0 -> Value v1
+    | _ -> Max in
+  { less; up }
+
 let infeq i1 i2 =
   match i1, i2 with
   | i1, i2 when i1 = i2 -> true

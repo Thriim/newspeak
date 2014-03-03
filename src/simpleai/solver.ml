@@ -36,7 +36,7 @@ let add_globals globals s =
 
 let fixpoint f s =
   let rec loop s =
-    let res = State.join s @@ f s in
+    let res = State.widen s @@ f s in
     if State.contains res s then res else loop res
   in
   loop s
