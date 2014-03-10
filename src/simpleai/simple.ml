@@ -107,6 +107,8 @@ sig
 
   val string_of_blk: blk -> string
 
+  val unroll: t -> int -> t
+
 end
 
 type t = {
@@ -361,3 +363,6 @@ let to_dot prog filename =
   output_string fid (blks ^ "\n");
   output_string fid "}";
   close_out fid
+
+
+let unroll prog n = prog

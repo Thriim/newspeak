@@ -1,18 +1,18 @@
 (*
-  C2Newspeak: compiles C code into Newspeak. Newspeak is a minimal language 
+  C2Newspeak: compiles C code into Newspeak. Newspeak is a minimal language
   well-suited for static analysis.
   Copyright (C) 2007  Charles Hymans, Olivier Levillain
-  
+
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
   License as published by the Free Software Foundation; either
   version 2.1 of the License, or (at your option) any later version.
-  
+
   This library is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
   Lesser General Public License for more details.
-  
+
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
@@ -27,7 +27,7 @@ type t = (global * Newspeak.location) list
 
 and assertion = spec_token list
 
-and spec_token = 
+and spec_token =
     | SymbolToken of char
     | IdentToken of string
     | CstToken of cst
@@ -38,7 +38,7 @@ and global =
   | GlbDecl of (string * decl)
   | GlbUserSpec of assertion
 
-and decl = 
+and decl =
     VDecl of vdecl
   | EDecl of exp
 (* struct or union: composite *)
@@ -50,7 +50,7 @@ and vdecl = {
   is_extern: bool;
   initialization: init option
 }
- 
+
 (* true for structure, false for union *)
 and is_struct = bool
 
@@ -70,7 +70,7 @@ and typ =
     | Va_arg
     | Typeof of exp
 
-and init = 
+and init =
     | Data of exp
     | Sequence of (string option * init) list
 
@@ -98,7 +98,7 @@ and lbl = string
 
 and static = bool
 
-and exp = 
+and exp =
   | Cst of cst
 (* TODO: Var and RetVar slightly redundant, think about it *)
   | Var of string
@@ -118,11 +118,11 @@ and exp =
   | Cast of (exp * typ)
       (* None is a regular assignment *)
   | Set of (exp * binop option * exp)
-      (* boolean is true if the operation is applied after the evaluation of the 
+      (* boolean is true if the operation is applied after the evaluation of the
 	 expression *)
   | OpExp of (binop * exp * bool)
   | BlkExp of blk
-     
+
 and cst = (Cir.cst * typ)
 
 and unop = Not | BNot
@@ -149,7 +149,7 @@ val uint_typ: typ
 
 val long_typ: typ
 
-val int_cst_of_lexeme: 
+val int_cst_of_lexeme:
   (string option * string * char option * string option) -> cst
 
 val char_cst_of_lexeme: int -> cst

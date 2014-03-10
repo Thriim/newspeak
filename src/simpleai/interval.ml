@@ -39,18 +39,21 @@ let widen i1 i2 =
     | _ -> Max in
   { less; up }
 
-let infeq i1 i2 =
+let rec infeq i1 i2 =
   match i1, i2 with
   | i1, i2 when i1 = i2 -> true
   | Min, _ | _, Max -> true
   | _, Min | Max, _ -> false
   | Value i1, Value i2 -> i1 < i2
 
-let contains i1 i2 =
+and infeq_interval i1 i2 =
+  contains i2 i1 || infeq i1.less i2.less && infeq i1.up i2.up
+
+and contains i1 i2 =
   infeq i1.less i2.less && infeq i2.less i1.up && infeq i2.up i1.up
 
 let intersects i1 i2 =
-  infeq i1.up i2.less
+  infeq i1.up i2.less || infeq i2.up i1.less
 
 let f_of_cmp cmp =
   let open Simple in
@@ -124,7 +127,9 @@ let is_bottom i =
 
 let bottom = { less = Max; up = Min }
 
-let intersect i1 i2 = { less = i1.up; up = i2.less }
+let intersect i1 i2 =
+  if infeq_interval i1 i2 then { less = i1.up; up = i2.less }
+  else { less = i2.up; up = i1.less }
 
 let guard op c x =
   match (op, c, x) with
@@ -144,7 +149,8 @@ let guard op c x =
       | _, _ -> begin
           match c.up, x.up with
           | Value v1, Value v2 when Int32.compare v1 v2 > 0 -> raise Emptyset
-          | _ -> join c x
+          | _ -> if is_bottom @@ intersect c x then raise Emptyset
+            else intersect c x
         end
     end
   | LT, c, x ->
@@ -155,7 +161,8 @@ let guard op c x =
       | _, _ -> begin
           match c.up, x.up with
           | Value v1, Value v2 when Int32.compare v1 v2 >= 0 -> raise Emptyset
-          | _ -> join c x
+          | _ -> if is_bottom @@ intersect c x then raise Emptyset
+            else intersect c x
         end
     end
   | GTE, c, x ->
@@ -166,7 +173,8 @@ let guard op c x =
       | _, _ -> begin
           match c.less, x.less with
           | Value v1, Value v2 when Int32.compare v1 v2 < 0 -> raise Emptyset
-          | _ -> join c x
+          | _ -> if is_bottom @@ intersect c x then raise Emptyset
+            else intersect c x
         end
     end
   | GT, c, x ->

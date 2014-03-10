@@ -190,6 +190,7 @@ struct
     | Some s ->
       let v1 = eval_exp s e1 in
       let v2 = eval_exp s e2 in
+      Format.printf "v1: %s; v2: %s@." (Val.to_string v1) (Val.to_string v2);
       match op with
         PlusI -> Val.is_safe_add v1 v2
       | MinusI -> Val.is_safe_add v1 (Val.neg v2)
