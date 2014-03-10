@@ -364,5 +364,22 @@ let to_dot prog filename =
   output_string fid "}";
   close_out fid
 
+let rec unroll_while expr blk  loc n =
+  let blk = unroll_blk blk n in
+  let rec naive acc n =
+    if n = 0 then acc else naive (blk :: acc) (n-1) in
+  [While(expr, List.flatten (naive [] n)), loc]
 
-let unroll prog n = prog
+and unroll_stmt (stmt, loc) n =
+  match stmt with
+  | While (expr, blk) ->
+    let blk = unroll_blk blk n in
+    unroll_while expr blk loc n
+  | _ -> [(stmt, loc)]
+
+and unroll_blk blk n =
+  List.fold_left (fun acc stmt -> unroll_stmt stmt n @ acc) [] (List.rev blk)
+
+let unroll prog n =
+  Hashtbl.iter (fun k blk -> Hashtbl.replace prog.fundecs k (unroll_blk blk n)) prog.fundecs;
+  { prog with init = unroll_blk prog.init n }
