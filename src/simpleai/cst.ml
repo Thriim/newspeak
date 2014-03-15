@@ -70,6 +70,41 @@ let is_safe_add x y =
          (Int64.compare (Int64.add (Int64.of_int32 x) (Int64.of_int32 y)) (Int64.of_int32 z) == 0)
     | _ -> false
 
+let mul x y =
+  match (x, y) with
+    (Val x, Val y) ->
+    let z = Int32.mul x y in
+    if (Int64.compare (Int64.mul (Int64.of_int32 x) (Int64.of_int32 y))
+          (Int64.of_int32 z) != 0) then Top
+    else Val z
+  | _ -> Top
+
+
+let is_safe_mul x y =
+  match (x, y) with
+      (Val x, Val y) ->
+	let z = Int32.mul x y in
+         (Int64.compare (Int64.mul (Int64.of_int32 x) (Int64.of_int32 y)) (Int64.of_int32 z) == 0)
+    | _ -> false
+
+let div x y =
+  match (x, y) with
+    (Val x, Val y) ->
+    let z = Int32.div x y in
+    if (Int64.compare (Int64.div (Int64.of_int32 x) (Int64.of_int32 y))
+          (Int64.of_int32 z) != 0) then Top
+    else Val z
+  | _ -> Top
+
+
+let is_safe_div x y =
+  match (x, y) with
+      (Val x, Val y) ->
+	let z = Int32.div x y in
+         (Int64.compare (Int64.div (Int64.of_int32 x) (Int64.of_int32 y)) (Int64.of_int32 z) == 0)
+    | _ -> false
+
+
 let _f_of_bop = function
   | LTE -> (<=)
   | GTE -> (>=)

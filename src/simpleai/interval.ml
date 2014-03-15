@@ -8,6 +8,10 @@ let universe = { less = Min; up = Max }
 let singleton i =
   { less = Value i; up = Value i }
 
+let is_singleton i =
+  match i.up, i.less with
+  | up, less -> up = less
+
 let of_bounds (l, u) =
   { less = Value l; up = Value u }
 
@@ -16,6 +20,16 @@ let int32_max i1 i2 =
 
 let int32_min i1 i2 =
   if Int32.compare i1 i2 >= 0 then i2 else i1
+
+let sub_cst c i =
+  match c with
+  | Min | Max -> c
+  | Value v -> Value (Int32.sub v i)
+
+let add_cst c i =
+  match c with
+  | Min | Max -> c
+  | Value v -> Value (Int32.add v i)
 
 let join i1 i2 =
   let less = match i1.less, i2.less with
@@ -80,44 +94,36 @@ let neg v =
   let less = inv v.up in
   { less; up }
 
-let is_safe_add' i1 i2 =
+let is_safe_op (i32op, i64op) i1 i2 =
   match i1, i2 with
   | Value v1, Value v2 ->
-    let res = Int32.add v1 v2 in
+    let res = i32op v1 v2 in
     (Int64.compare
-       (Int64.add (Int64.of_int32 v1) (Int64.of_int32 v2))
+       (i64op (Int64.of_int32 v1) (Int64.of_int32 v2))
        (Int64.of_int32 res)) == 0
   | _, _ -> false
 
 let is_safe_add i1 i2 =
-  is_safe_add' i1.less i2.less && is_safe_add' i1.up i2.up
+  is_safe_op (Int32.add, Int64.add) i1.less i2.less &&
+  is_safe_op (Int32.add, Int64.add) i1.up i2.up
 
 let add (i1 : t) (i2 : t) =
   let less = match i1.less, i2.less with
     | Max, _ | _, Max -> Max (* Possibly bottom *)
     | _ , Min | Min, _ -> Min
     | Value v1, Value v2 ->
-      if is_safe_add' i1.up i2.up then Value (Int32.add v1 v2) else Min in
+      if is_safe_op (Int32.add, Int64.add) i1.up i2.up then
+        Value (Int32.add v1 v2)
+      else Min in
   let up = match i1.up, i2.up with
     | Min, _ | _, Min -> Min (* Possibly bottom *)
     | Max, _ | _, Max -> Max
     | Value v1, Value v2 ->
-      if is_safe_add' i1.up i2.up then Value (Int32.add v1 v2) else Max in
+      if is_safe_op (Int32.add, Int64.add) i1.up i2.up then
+        Value (Int32.add v1 v2)
+      else Max in
   { less; up }
 
-(* let guard op i1 i2 = *)
-(*   let cmp = match op with *)
-(*     | LTE -> (>) | EQ -> (<>) | GT -> (<=) *)
-(*     | LT -> (>=) | GTE -> (<) | NEQ -> (=) in *)
-(*   let less = *)
-(*     match op, i1.less, i2.less with *)
-(*     | _, Value v1, Value v2 when cmp (Int32.compare v1 v2) 0 -> raise Emptyset *)
-(*     | _, _, _ -> i2.less in *)
-(*   let up = *)
-(*     match i1.up, i2.up with *)
-(*     | Value v1, Value v2 when cmp (Int32.compare v1 v2) 0 -> raise Emptyset *)
-(*     | _, _ -> i2.up in *)
-(*   { less; up } *)
 
 let is_bottom i =
   match i.less, i.up with
@@ -127,9 +133,61 @@ let is_bottom i =
 
 let bottom = { less = Max; up = Min }
 
+let is_safe_mul i1 i2 =
+  is_safe_op (Int32.mul, Int64.mul) i1.less i2.less &&
+  is_safe_op (Int32.mul, Int64.mul) i1.up i2.up
+
+
+exception Impossible_operation
+
+let mul_cst c1 c2 =
+  match c1, c2 with
+  | Value v1, Value v2 -> Int32.mul v1 v2
+  | _, _ -> raise Impossible_operation
+
+let op op_cst i1 i2 =
+  try
+    let results = [ op_cst i1.less i2.less;
+                    op_cst i1.up i2.less;
+                    op_cst i1.less i2.up;
+                    op_cst i1.up i2.up ] in
+    let up = Value (List.fold_left (fun max v -> if v > max then v else max)
+        Int32.min_int results) in
+    let less = Value (List.fold_left (fun min v -> if v < min then v else min)
+        Int32.max_int results) in
+    { less; up }
+  with Impossible_operation -> universe
+
+let mul = op mul_cst
+
+let is_safe_div i1 i2 =
+  try
+    is_safe_op (Int32.div, Int64.div) i1.less i2.less &&
+    is_safe_op (Int32.div, Int64.div) i1.up i2.up
+  with Division_by_zero -> false
+
+let div_cst c1 c2 =
+  match c1, c2 with
+  | Value v1, Value v2 when v2 != 0l -> Int32.div v1 v2
+  | _, _ -> raise Impossible_operation
+
+let div = op div_cst
+
 let intersect i1 i2 =
   if infeq_interval i1 i2 then { less = i1.up; up = i2.less }
   else { less = i2.up; up = i1.less }
+
+let max_cst c1 c2 =
+  match c1, c2 with
+  | Max, _ | _, Max -> Max
+  | Min, v | v, Min -> v
+  | Value v1, Value v2 -> Value (int32_max v1 v2)
+
+let min_cst c1 c2 =
+  match c1, c2 with
+  | Max, v | v, Max -> v
+  | Min, _ | _, Min -> Min
+  | Value v1, Value v2 -> Value (int32_min v1 v2)
 
 let guard op c x =
   match (op, c, x) with
@@ -143,50 +201,31 @@ let guard op c x =
     else raise Emptyset
   | LTE, c, x ->
     begin
-      match c.up, x.less with
+      match c.less, x.up with
       | Max, Min | Max, Value _ | Value _, Min -> raise Emptyset
-      (* | Value v1, Value v2 when (Int32.compare v1 v2) > 0 -> raise Emptyset *)
-      | _, _ -> begin
-          match c.up, x.up with
-          | Value v1, Value v2 when Int32.compare v1 v2 > 0 -> raise Emptyset
-          | _ -> if is_bottom @@ intersect c x then raise Emptyset
-            else intersect c x
-        end
+      | Value v1, Value v2 when (Int32.compare v1 v2) > 0 -> raise Emptyset
+      | _, _ -> { less = max_cst c.less x.less; up = x.up }
     end
   | LT, c, x ->
     begin
-      match c.up, x.less with
+      match c.less, x.up with
       | Max, Min | Max, Value _ | Value _, Min -> raise Emptyset
-      (* | Value v1, Value v2 when (Int32.compare v1 v2) > 0 -> raise Emptyset *)
-      | _, _ -> begin
-          match c.up, x.up with
-          | Value v1, Value v2 when Int32.compare v1 v2 >= 0 -> raise Emptyset
-          | _ -> if is_bottom @@ intersect c x then raise Emptyset
-            else intersect c x
-        end
+      | Value v1, Value v2 when (Int32.compare v1 v2) >= 0 -> raise Emptyset
+      | _, _ -> { less = max_cst (add_cst c.less 1l) x.less; up = x.up }
     end
   | GTE, c, x ->
     begin
-      match c.less, x.up with
+      match c.up, x.less with
       | Min, Max | Min, Value _ | Value _, Max -> raise Emptyset
-      (* | Value v1, Value v2 when (Int32.compare v1 v2) > 0 -> raise Emptyset *)
-      | _, _ -> begin
-          match c.less, x.less with
-          | Value v1, Value v2 when Int32.compare v1 v2 < 0 -> raise Emptyset
-          | _ -> if is_bottom @@ intersect c x then raise Emptyset
-            else intersect c x
-        end
+      | Value v1, Value v2 when (Int32.compare v1 v2) < 0 -> raise Emptyset
+      | _, _ -> { less = x.less; up = min c.up x.up }
     end
   | GT, c, x ->
     begin
-      match c.less, x.up with
+      match c.up, x.less with
       | Min, Max | Min, Value _ | Value _, Max -> raise Emptyset
-      (* | Value v1, Value v2 when (Int32.compare v1 v2) > 0 -> raise Emptyset *)
-      | _, _ -> begin
-          match c.less, x.less with
-          | Value v1, Value v2 when Int32.compare v1 v2 <= 0 -> raise Emptyset
-          | _ -> join c x
-        end
+      | Value v1, Value v2 when (Int32.compare v1 v2) < 0 -> raise Emptyset
+      | _, _ -> { less = x.less; up = min (add_cst c.up 1l) x.up }
     end
 
 let to_string v =

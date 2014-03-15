@@ -366,9 +366,9 @@ let to_dot prog filename =
 
 let rec unroll_while expr blk  loc n =
   let blk = unroll_blk blk n in
-  let rec naive acc n =
-    if n = 0 then acc else naive (blk :: acc) (n-1) in
-  [While(expr, List.flatten (naive [] n)), loc]
+  let rec step acc n =
+    if n = 0 then acc else step ((If (expr, blk, []), loc) :: acc) (n-1) in
+  [While(expr, step [] n), loc]
 
 and unroll_stmt (stmt, loc) n =
   match stmt with

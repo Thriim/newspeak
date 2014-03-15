@@ -45,7 +45,11 @@ sig
   val implies: (t * Simple.cmp * Int32.t) -> bool
   val neg: t -> t
   val add: t -> t -> t
+  val mul: t -> t -> t
+  val div: t -> t -> t
   val is_safe_add: t -> t -> bool
+  val is_safe_mul: t -> t -> bool
+  val is_safe_div: t -> t -> bool
   val guard: bop -> t -> t -> t
   val to_string: t -> string
 end
@@ -117,6 +121,8 @@ struct
     match op with
       PlusI -> Val.add x y
     | MinusI -> Val.add x (Val.neg y)
+    | MultI -> Val.mul x y
+    | DivI -> Val.div x y
     | Gt | Eq -> failwith "Unsupported binary operator"
     | _ -> Val.universe
 
@@ -190,10 +196,12 @@ struct
     | Some s ->
       let v1 = eval_exp s e1 in
       let v2 = eval_exp s e2 in
-      Format.printf "v1: %s; v2: %s@." (Val.to_string v1) (Val.to_string v2);
+      (* Format.printf "v1: %s; v2: %s@." (Val.to_string v1) (Val.to_string v2); *)
       match op with
         PlusI -> Val.is_safe_add v1 v2
       | MinusI -> Val.is_safe_add v1 (Val.neg v2)
+      | MultI -> Val.is_safe_mul v1 v2
+      | DivI -> Val.is_safe_div v1 v2
       | Eq|Gt -> true
       | _ -> false
 
