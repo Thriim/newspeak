@@ -160,10 +160,19 @@ let op op_cst i1 i2 =
 
 let mul = op mul_cst
 
+let contains_zero i =
+  match i.less, i.up with
+  | Min, Max -> true
+  | Value v1, Value v2 -> v1 <= 0l && v2 >= 0l
+  | Value v1, Max -> v1 <= 0l
+  | Min, Value v2 -> v2 >= 0l
+  | _, _ -> false (* bottom *)
+
 let is_safe_div i1 i2 =
   try
     is_safe_op (Int32.div, Int64.div) i1.less i2.less &&
-    is_safe_op (Int32.div, Int64.div) i1.up i2.up
+    is_safe_op (Int32.div, Int64.div) i1.up i2.up &&
+    not @@ contains_zero i2
   with Division_by_zero -> false
 
 let div_cst c1 c2 =
