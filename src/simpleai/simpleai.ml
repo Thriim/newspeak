@@ -29,7 +29,8 @@ let speclist =
     ("--to-dot", Arg.String (fun s -> Context.dot_filename := s;Context.dot_output := true),  "outputs a DOT representation of the CFG");
     ("--unroll",
      Arg.Int (fun i -> Context.unroll := true; Context.unroll_times := i),
-     "unrolls looping instruction n times")
+     "unrolls looping instruction n times");
+    ("--delay", Arg.Int (fun i -> Context.delay := i), "Use the delayed widening each count given")
   ]
 
 let process input =

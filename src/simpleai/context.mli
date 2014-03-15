@@ -36,3 +36,5 @@ val dot_filename : string ref
 
 val unroll : bool ref
 val unroll_times : int ref
+
+val delay : int ref

@@ -35,11 +35,12 @@ let add_globals globals s =
 
 
 let fixpoint f s =
-  let rec loop s =
-    let res = State.widen s @@ f s in
-    if State.contains res s then res else loop res
+  let rec loop i s =
+    let res = if i = 0 then State.widen s @@ f s
+      else State.join s @@ f s in
+    if State.contains res s then res else loop ((i - 1) mod !Context.delay) res
   in
-  loop s
+  loop !Context.delay s
 
 let check_exp loc e s =
   let rec check e =

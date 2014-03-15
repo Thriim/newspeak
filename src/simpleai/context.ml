@@ -49,3 +49,5 @@ let dot_filename = ref ""
 
 let unroll = ref false
 let unroll_times = ref 0
+
+let delay = ref 0
