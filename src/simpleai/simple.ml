@@ -275,10 +275,9 @@ let rec dot_of_expr =
 
 let blk_tbl = Hashtbl.create 19
 
-(** This is the worst code ever, please don't read for now ! *)
-
 
 let is_if = function If (_, _ ,_) -> true | _ -> false
+let is_while = function While (_, _) -> true | _ -> false
 
 let rec dot_of_blk =
   let i = ref 0 in
@@ -294,6 +293,8 @@ let rec dot_of_blk =
       incr i;
       if is_if stmtk then
         dot_of_blk (List.tl stmts) blk
+      else if is_while stmtk then
+        dot_of_blk [stmt] blk
       else
         dot_of_blk stmts blk
 
@@ -330,8 +331,8 @@ and dot_of_stmt_kind =
         let while_node = Format.sprintf "stmt%d" !i in
         Hashtbl.add stmt_tbl while_node e_node;
         incr i;
-        let bl = dot_of_blk [e] bl in
-        bl
+        let bl = dot_of_blk [while_node] bl in
+        while_node :: bl
 
       | Call (FunId f) -> [Format.sprintf "%s" f]
 

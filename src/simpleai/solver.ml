@@ -94,8 +94,8 @@ let compute prog =
       State.join s1 s2
     | While (e, body) ->
       let f s =
-	check_exp loc e s;
-	let s = State.guard e s in
+        check_exp loc e s;
+        let s = State.guard e s in
 	compute_blk body s
       in
       let s = fixpoint f s in

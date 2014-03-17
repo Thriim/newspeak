@@ -32,6 +32,14 @@ exception Unknown
 
 type bop = EQ | GT | LT | NEQ | LTE | GTE
 
+let string_of_bop = function
+  | EQ -> "EQ"
+  | GT -> "GT"
+  | LT -> "LT"
+  | NEQ -> "NEQ"
+  | LTE -> "LTE"
+  | GTE -> "GTE"
+
 module type Data =
 sig
   type t
