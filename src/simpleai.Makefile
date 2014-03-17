@@ -36,7 +36,7 @@ FILES=version utils/strSet \
       simpleai/context simpleai/simple \
       simpleai/filter simpleai/sigs \
       simpleai/unrelState simpleai/cst simpleai/interval \
-      simpleai/parity simpleai/solver simpleai/simpleai
+      simpleai/parity simpleai/parityInterval simpleai/solver simpleai/simpleai
 
 FILES.CMO=$(addsuffix .cmo,$(FILES))
 FILES.CMX=$(addsuffix .cmx,$(FILES))

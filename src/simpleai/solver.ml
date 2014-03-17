@@ -28,7 +28,7 @@
 
 open Simple
 
-module State = UnrelState.Make(Parity)
+module State = UnrelState.Make(ParityInterval)
 
 let add_globals globals s =
   List.fold_left (fun s' x -> State.add_var x s') s globals
